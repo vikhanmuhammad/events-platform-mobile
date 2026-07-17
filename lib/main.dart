@@ -25,10 +25,7 @@ class MyApp extends ConsumerWidget {
         loading: () => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
-        error: (error, stack) {
-          ref.refresh(authStateProvider);
-          return const LoginScreen();
-        },
+        error: (error, stack) => const LoginScreen(),
         data: (user) => user != null ? const HomeScreen() : const LoginScreen(),
       ),
     );
