@@ -26,8 +26,12 @@ class EventsRepository {
         },
       );
 
-      final events = (response.data['events'] as List)
-          .map((e) => Event.fromJson(e))
+      final eventsList = response.data['events'] as List?;
+      if (eventsList == null) {
+        return [];
+      }
+      final events = eventsList
+          .map((e) => Event.fromJson(e as Map<String, dynamic>))
           .toList();
       return events;
     } on DioException catch (e) {
