@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../providers/event_providers.dart';
+import 'event_detail_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -76,7 +77,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       trailing: Text('${event.attendeeCount} going'),
                       onTap: () {
-                        // TODO: Navigate to event detail
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => EventDetailScreen(eventId: event.id),
+                          ),
+                        );
                       },
                     );
                   },

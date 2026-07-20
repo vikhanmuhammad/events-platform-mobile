@@ -42,7 +42,48 @@ class EventsRepository {
   Future<Event> getEvent(String id) async {
     try {
       final response = await _apiService.dio.get('/events/$id');
-      return Event.fromJson(response.data['event']);
+      return Event.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<void> rsvpEvent(String id, String status) async {
+    try {
+      await _apiService.dio.post(
+        '/events/$id/rsvp',
+        data: {'status': status},
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<Event>> getUserUpcomingEvents() async {
+    try {
+      final response = await _apiService.dio.get('/users/me/events');
+      final eventsList = response.data['events'] as List?;
+      if (eventsList == null) {
+        return [];
+      }
+      return eventsList
+          .map((e) => Event.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<Event>> getUserPastEvents() async {
+    try {
+      final response = await _apiService.dio.get('/users/me/past-events');
+      final eventsList = response.data['events'] as List?;
+      if (eventsList == null) {
+        return [];
+      }
+      return eventsList
+          .map((e) => Event.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }

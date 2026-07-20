@@ -30,3 +30,13 @@ final eventDetailProvider =
   final repository = ref.watch(eventsRepositoryProvider);
   return repository.getEvent(eventId);
 });
+
+final userUpcomingEventsProvider = FutureProvider<List<Event>>((ref) async {
+  final repository = ref.watch(eventsRepositoryProvider);
+  return repository.getUserUpcomingEvents();
+});
+
+final userPastEventsProvider = FutureProvider<List<Event>>((ref) async {
+  final repository = ref.watch(eventsRepositoryProvider);
+  return repository.getUserPastEvents();
+});
