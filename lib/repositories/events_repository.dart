@@ -66,9 +66,7 @@ class EventsRepository {
       if (eventsList == null) {
         return [];
       }
-      return eventsList
-          .map((e) => Event.fromJson(e as Map<String, dynamic>))
-          .toList();
+      return eventsList.map((e) => _parseUserEvent(e)).toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -81,12 +79,20 @@ class EventsRepository {
       if (eventsList == null) {
         return [];
       }
-      return eventsList
-          .map((e) => Event.fromJson(e as Map<String, dynamic>))
-          .toList();
+      return eventsList.map((e) => _parseUserEvent(e)).toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }
+  }
+
+  // The /users/me endpoints report RSVP status under "your_status",
+  // while Event.fromJson expects "user_rsvp_status".
+  Event _parseUserEvent(dynamic e) {
+    final map = Map<String, dynamic>.from(e as Map<String, dynamic>);
+    if (map['your_status'] != null) {
+      map['user_rsvp_status'] = map['your_status'];
+    }
+    return Event.fromJson(map);
   }
 
   String _handleError(DioException error) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/event_providers.dart';
+import '../theme/app_colors.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -47,69 +48,178 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final eventAsync = ref.watch(eventDetailProvider(widget.eventId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Details')),
+      backgroundColor: AppColors.background,
       body: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
         data: (event) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(event.title, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 8),
-                Chip(label: Text(event.category)),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 18),
-                    const SizedBox(width: 8),
-                    Text(DateFormat('EEEE, MMM d, y • h:mm a').format(event.startTime)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 18),
-                    const SizedBox(width: 8),
-                    Text(event.locationName),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.people, size: 18),
-                    const SizedBox(width: 8),
-                    Text('${event.attendeeCount} going'),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(event.description, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 24),
-                Text('RSVP', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _isSubmitting ? null : () => _rsvp('GOING'),
-                      child: const Text('Going'),
+          final catColor = CategoryColors.of(event.category);
+
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                expandedHeight: 180,
+                backgroundColor: AppColors.brand600,
+                iconTheme: const IconThemeData(color: Colors.white),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [catColor, AppColors.fuchsia500],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                     ),
-                    OutlinedButton(
-                      onPressed: _isSubmitting ? null : () => _rsvp('INTERESTED'),
-                      child: const Text('Interested'),
+                    child: const Center(
+                      child: Icon(Icons.celebration, color: Colors.white70, size: 56),
                     ),
-                    OutlinedButton(
-                      onPressed: _isSubmitting ? null : () => _rsvp('CANT_GO'),
-                      child: const Text("Can't Go"),
-                    ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: catColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            event.category,
+                            style: TextStyle(
+                              color: catColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          event.title,
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 14),
+                        _InfoRow(
+                          icon: Icons.calendar_today,
+                          text: DateFormat('EEEE, MMM d, y • h:mm a').format(event.startTime),
+                        ),
+                        const SizedBox(height: 8),
+                        _InfoRow(icon: Icons.location_on, text: event.locationName),
+                        const SizedBox(height: 8),
+                        _InfoRow(icon: Icons.people, text: '${event.attendeeCount} going'),
+                        const SizedBox(height: 16),
+                        Text(
+                          event.description,
+                          style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+                        ),
+                        const SizedBox(height: 24),
+                        Divider(color: Colors.grey.shade200),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Will you attend?',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _RsvpButton(
+                              label: 'Going',
+                              icon: Icons.check,
+                              color: AppColors.success,
+                              onPressed: _isSubmitting ? null : () => _rsvp('GOING'),
+                            ),
+                            _RsvpButton(
+                              label: 'Interested',
+                              icon: Icons.help_outline,
+                              color: AppColors.accent500,
+                              onPressed: _isSubmitting ? null : () => _rsvp('INTERESTED'),
+                            ),
+                            _RsvpButton(
+                              label: "Can't Go",
+                              icon: Icons.close,
+                              color: AppColors.danger,
+                              onPressed: _isSubmitting ? null : () => _rsvp('CANT_GO'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.brand500),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ),
+      ],
+    );
+  }
+}
+
+class _RsvpButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
+
+  const _RsvpButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }
