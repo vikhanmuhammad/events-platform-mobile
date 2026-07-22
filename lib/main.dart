@@ -4,10 +4,14 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'providers/auth_provider.dart';
 import 'screens/my_events_screen.dart';
+import 'screens/map_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/app_colors.dart';
+import 'services/offline_cache.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await OfflineCache().init();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -42,7 +46,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _index = 0;
 
-  static const _screens = [HomeScreen(), MyEventsScreen()];
+  static const _screens = [HomeScreen(), MapScreen(), MyEventsScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +78,11 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Icon(Icons.explore_outlined),
                 activeIcon: Icon(Icons.explore),
                 label: 'Explore',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.map_outlined),
+                activeIcon: Icon(Icons.map),
+                label: 'Map',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.calendar_today_outlined),

@@ -55,50 +55,72 @@ class _MyEventsScreenState extends ConsumerState<MyEventsScreen>
   }
 
   Widget _buildEventsList({required bool isUpcoming}) {
-    final eventsAsync = ref.watch(
-      isUpcoming ? userUpcomingEventsProvider : userPastEventsProvider,
-    );
+    final provider = isUpcoming ? userUpcomingEventsProvider : userPastEventsProvider;
+    final eventsAsync = ref.watch(provider);
 
-    return eventsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
-      data: (events) {
-        if (events.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(provider.future),
+      child: eventsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 80),
+              child: Center(child: Text('Error: $error')),
+            ),
+          ],
+        ),
+        data: (events) {
+          if (events.isEmpty) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                Icon(Icons.event_busy, size: 48, color: Colors.grey.shade300),
-                const SizedBox(height: 12),
-                Text(
-                  isUpcoming ? 'No upcoming events' : 'No past events',
-                  style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                Padding(
+                  padding: const EdgeInsets.only(top: 80),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_busy, size: 48, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        Text(
+                          isUpcoming ? 'No upcoming events' : 'No past events',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: events.length,
-          itemBuilder: (context, index) {
-            final Event event = events[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _MyEventCard(
-                event: event,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => EventDetailScreen(eventId: event.id),
-                    ),
-                  );
-                },
-              ),
             );
-          },
-        );
-      },
+          }
+          return ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            itemCount: events.length,
+            itemBuilder: (context, index) {
+              final Event event = events[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _MyEventCard(
+                  event: event,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => EventDetailScreen(eventId: event.id),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

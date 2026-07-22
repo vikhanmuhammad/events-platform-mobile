@@ -49,4 +49,21 @@ class Event {
       userRsvpStatus: json['user_rsvp_status'] ?? 'NOT_RESPONDED',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category,
+      'start_time': startTime.toIso8601String(),
+      'location_name': locationName,
+      'latitude': latitude,
+      'longitude': longitude,
+      'image_url': imageUrl,
+      'creator_id': creatorId,
+      'attendee_count': attendeeCount,
+      'user_rsvp_status': userRsvpStatus,
+    };
+  }
 }

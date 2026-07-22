@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 
 class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final Widget? titleTrailing;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
   final Widget? leading;
@@ -10,6 +11,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   const GradientAppBar({
     super.key,
     required this.title,
+    this.titleTrailing,
     this.actions,
     this.bottom,
     this.leading,
@@ -24,12 +26,18 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       decoration: const BoxDecoration(gradient: AppColors.brandGradient),
       child: AppBar(
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (titleTrailing != null) titleTrailing!,
+          ],
         ),
         leading: leading,
         backgroundColor: Colors.transparent,

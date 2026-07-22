@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import '../models/event_model.dart';
 import '../services/api_service.dart';
+import '../services/offline_cache.dart';
 
 class EventsRepository {
   final ApiService _apiService = ApiService();
+  final OfflineCache _cache = OfflineCache();
 
   Future<List<Event>> listEvents({
     String? category,
@@ -13,6 +15,10 @@ class EventsRepository {
     int limit = 10,
     int offset = 0,
   }) async {
+    // Always attempt the live request first. connectivity_plus's pre-flight
+    // check is unreliable on emulators/some networks (false "offline"
+    // reports), so it must not gate whether we even try the network - it's
+    // only used as a fallback signal if the real request fails below.
     try {
       final response = await _apiService.dio.get(
         '/events',
@@ -25,17 +31,34 @@ class EventsRepository {
           'offset': offset,
         },
       );
-
-      final eventsList = response.data['events'] as List?;
-      if (eventsList == null) {
-        return [];
-      }
-      final events = eventsList
+      final eventsList = (response.data['events'] as List? ?? [])
           .map((e) => Event.fromJson(e as Map<String, dynamic>))
           .toList();
-      return events;
-    } on DioException catch (e) {
-      throw _handleError(e);
+
+      // A location filter that finds nothing nearby shouldn't leave the
+      // user with a dead-end empty screen - fall back to the unfiltered list.
+      if (eventsList.isEmpty && latitude != null && longitude != null) {
+        return listEvents(
+          category: category,
+          distance: distance,
+          limit: limit,
+          offset: offset,
+        );
+      }
+
+      // Cache for offline
+      await _cache.cacheEvents(eventsList.map((e) => e.toJson()).toList());
+
+      return eventsList;
+    } catch (e) {
+      // Live request failed - fall back to cache if we have one.
+      final cached = _cache.getCachedEvents();
+      if (cached != null) {
+        return cached
+            .map((e) => Event.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+      rethrow;
     }
   }
 
@@ -48,14 +71,27 @@ class EventsRepository {
     }
   }
 
-  Future<void> rsvpEvent(String id, String status) async {
+  Future<void> rsvpEvent(String eventId, String status) async {
     try {
-      await _apiService.dio.post(
-        '/events/$id/rsvp',
-        data: {'status': status},
-      );
-    } on DioException catch (e) {
-      throw _handleError(e);
+      await _apiService.dio.post('/events/$eventId/rsvp', data: {'status': status});
+    } catch (e) {
+      // Live request failed - queue for later sync.
+      await _cache.addPendingRsvp(eventId, status);
+    }
+  }
+
+  Future<void> syncPendingRsvps() async {
+    final pending = _cache.getPendingRsvps();
+    for (final entry in pending.entries) {
+      try {
+        await _apiService.dio.post(
+          '/events/${entry.key}/rsvp',
+          data: {'status': entry.value},
+        );
+        await _cache.clearPendingRsvp(entry.key);
+      } catch (e) {
+        print('Failed to sync RSVP: $e');
+      }
     }
   }
 
