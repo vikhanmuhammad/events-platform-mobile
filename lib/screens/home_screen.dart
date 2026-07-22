@@ -5,6 +5,7 @@ import '../config/constants.dart';
 import '../providers/auth_provider.dart';
 import '../providers/event_providers.dart';
 import '../theme/app_colors.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/gradient_app_bar.dart';
 import 'event_detail_screen.dart';
 
@@ -28,8 +29,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authStateProvider.notifier).logout();
+            onPressed: () async {
+              final confirmed = await showConfirmDialog(
+                context,
+                title: 'Log out?',
+                message: "You'll need to log in again to access your events.",
+                confirmLabel: 'Logout',
+              );
+              if (confirmed) {
+                ref.read(authStateProvider.notifier).logout();
+              }
             },
           ),
         ],
